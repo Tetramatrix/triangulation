@@ -10,13 +10,14 @@
 require_once("delaunay.php");
 
 // Turn off all error reporting
-error_reporting(0);
+//error_reporting(0);
  
 // example 1
 $triangle=new DelaunayTriangulation();
 $triangle->main();
 
-$vis=new visualize("c:\Temp\\",$triangle);
+//$vis=new visualize("c:\Temp\\",$triangle);
+$vis=new visualize("/tmp/",$triangle);
 $vis->genimage();
       
 //example2

@@ -3,10 +3,11 @@
 /* * *************************************************************
  * Copyright notice
  *
- * (c) 2013 Chi Hoang (info@chihoang.de)
+ * (c) 2013-2015 Chi Hoang (info@chihoang.de)
  *  All rights reserved
  *
  * **************************************************************/
+require_once("hilbert.php");
 
 define("EPSILON",0.000001);
 define("SUPER_TRIANGLE",(float)1000000000);
@@ -179,6 +180,20 @@ class DelaunayTriangulation
       return array(round($CircumCenterX), round($CircumCenterY));
    }
 
+    function dotproduct($x1,$y1,$x2,$y2,$px,$py)
+   {
+      $dx1 = $x2 - $x1;
+      $dy1 = $y2 - $y1;
+      $dx2 = $px - $x1;
+      $dy2 = $py - $y1;
+      $o = ($dx1*$dy2)-($dy1*$dx2);
+
+      //if ($o > 0.0) return(0);
+      //if ($o < 0.0) return(1);
+      //return(-1);
+      return $o;
+   }
+   
    //LEFT_SIDE = true, RIGHT_SIDE = false, 2 = COLINEAR
    function side($x1,$y1,$x2,$y2,$px,$py)
    {
@@ -309,61 +324,10 @@ class DelaunayTriangulation
 	    if ($c->x + $c->r < $x[$key]) $complete[$vkey]=1;
             if ($c->r > EPSILON && $this->inside($c, $x[$key],$y[$key]))
             {
-               if ($this->side($x[$vi],$y[$vi],$x[$vj],$y[$vj],$x[$vk],$y[$vk])==0)
-               {
-                  $edges[]=array($vi,$vj);
-                  $edges[]=array($vj,$vk);
-                  $edges[]=array($vk,$vi);
-                  
-               } elseif($this->side($x[$vk],$y[$vj],$x[$vj],$y[$vi],$x[$vi],$y[$vk])==0)
-               {
-                  $edges[]=array($vk,$vj);
-                  $edges[]=array($vj,$vi);
-                  $edges[]=array($vi,$vk);
-                  
-               } elseif($this->side($x[$vk],$y[$vi],$x[$vi],$y[$vj],$x[$vj],$y[$vk])==0)
-               {
-                  $edges[]=array($vk,$vi);
-                  $edges[]=array($vi,$vj);
-                  $edges[]=array($vj,$vk);
-                  
-               } elseif($this->side($x[$vj],$y[$vi],$x[$vi],$y[$vk],$x[$vk],$y[$vj])==0)
-               {  
-                  $edges[]=array($vj,$vi);
-                  $edges[]=array($vi,$vk);
-                  $edges[]=array($vk,$vj);
-               
-               } elseif($this->side($x[$vj],$y[$vk],$x[$vk],$y[$vi],$x[$vi],$y[$vj])==0)
-               {
-                  $edges[]=array($vj,$vk);
-                  $edges[]=array($vk,$vi);
-                  $edges[]=array($vi,$vj);
-               
-               } elseif($this->side($x[$vi],$y[$vk],$x[$vk],$y[$vj],$x[$vj],$y[$vi])==0)
-               {
-                  $edges[]=array($vi,$vk);
-                  $edges[]=array($vk,$vj);
-                  $edges[]=array($vj,$vi);
-               
-               } elseif($this->side($x[$vk],$y[$vk],$x[$vi],$y[$vi],$x[$vj],$y[$vj])==0)
-               {
-                  $edges[]=array($vk,$vi);
-                  $edges[]=array($vi,$vj);
-                  $edges[]=array($vj,$vk);
-               
-               } elseif($this->side($x[$vj],$y[$vj],$x[$vk],$y[$vk],$x[$vi],$y[$vi])==0)
-               {
-                  $edges[]=array($vj,$vk);
-                  $edges[]=array($vk,$vi);
-                  $edges[]=array($vi,$vj);
-               } 
-               else
-               {
-                  $edges[]=array($vi,$vj);
-                  $edges[]=array($vj,$vk);
-                  $edges[]=array($vk,$vi); 
-               }
-               
+	       $edges[]=array($vi,$vj);
+	       $edges[]=array($vj,$vk);
+	       $edges[]=array($vk,$vi); 
+
                unset($v[$vkey]);
                unset($complete[$vkey]);
             }
@@ -406,46 +370,17 @@ class DelaunayTriangulation
          $edges=array_values($edges);
          foreach ($edges as $ekey => $earr)
          {   
-            list($vi,$vj,$vk)=array($edges[$ekey][0],$edges[$ekey][1],$key);
-            
-            if ($this->side($x[$vi],$y[$vi],$x[$vj],$y[$vj],$x[$vk],$y[$vk])==0)
-            {
-               $v[] = array($vi,$vj,$vk);
-               
-            } elseif($this->side($x[$vk],$y[$vj],$x[$vj],$y[$vi],$x[$vi],$y[$vk])==0)
-            {
-               $v[] = array($vk,$vj,$vi);
-               
-            } elseif($this->side($x[$vk],$y[$vi],$x[$vi],$y[$vj],$x[$vj],$y[$vk])==0)
-            {
-               $v[] = array($vk,$vi,$vj);
-               
-            } elseif($this->side($x[$vj],$y[$vi],$x[$vi],$y[$vk],$x[$vk],$y[$vj])==0)
-            {  
-               $v[] = array($vj,$vi,$vk);
-            
-            } elseif($this->side($x[$vj],$y[$vk],$x[$vk],$y[$vi],$x[$vi],$y[$vj])==0)
-            {
-               $v[] = array($vj,$vk,$vi);
-            
-            } elseif($this->side($x[$vi],$y[$vk],$x[$vk],$y[$vj],$x[$vj],$y[$vi])==0)
-            {
-               $v[] = array($vi,$vk,$vj);
-               
-            }  elseif($this->side($x[$vk],$y[$vk],$x[$vj],$y[$vj],$x[$vj],$y[$vi])==0)
-            {
-               $v[] = array($vk,$vj,$vi);
-               
-            }  elseif($this->side($x[$vj],$y[$vj],$x[$vk],$y[$vk],$x[$vi],$y[$vi])==0)
-            {
-               $v[] = array($vj,$vk,$vi);
-            }  
-            else
-            {
-               $v[] = array($vi,$vj,$vk);
-            }
+            $v[] = array($edges[$ekey][0],$edges[$ekey][1],$key);
             $complete[$ntri++]=0;
          }
+	 
+//	 $sort=array();
+//	 foreach ($v as $vkey=>$varr) 
+//	 {
+//            list($vi,$vj,$vk)=array($v[$vkey][0],$v[$vkey][1],$v[$vkey][2]);
+//            $sort[]=$this->dotproduct($x[$vi],$y[$vi],$x[$vj],$y[$vj],$x[$vk],$y[$vk],$pObj->stageWidth/2,$pObj->stageHeight/2);
+//	 }
+//	 array_multisort($sort, SORT_ASC, SORT_NUMERIC, $v);        
       }
     
       /*
@@ -473,6 +408,20 @@ class DelaunayTriangulation
       return $v;
    }
  
+   function power($number,$base) {
+      //use when the power is needed
+      $pow=0;
+      do {
+	 $number=ceil($number/$base);
+	 $pow++;
+      } while ($number>1);
+      
+      if ($number==1)
+	 return $pow;
+      else
+	 return false;
+   }
+      
    function main($pointset=0,$stageWidth=400,$stageHeight=400)
    {
       $this->stageWidth = $stageWidth;
@@ -493,12 +442,28 @@ class DelaunayTriangulation
          $this->pointset=$pointset;   
       }
 
-      $x = $y = $sortX = array(); 
-      foreach($this->pointset as $key => $arr)
-      {
-         $sortX[$key] = $arr[0];
-      } 
-      array_multisort($sortX, SORT_ASC, SORT_NUMERIC, $this->pointset);
+      $maxx=$maxy=0;
+      foreach ($this->pointset as $key => $arr) {
+	 if ($maxx<$arr[0]) $maxx=$arr[0];
+	 if ($maxy<$arr[1]) $maxy=$arr[1];
+      }
+         
+      $powx=$this->power($maxx,2);     
+      $powy=$this->power($maxy,2);
+      $order= ($powx<$powy) ? $powy : $powx;
+ 
+      $hilbert = new hilbert();
+      foreach($this->pointset as $key => $arr) {
+	 $sort[$key] = $hilbert->point_to_hilbert($arr[0], $arr[1], $order);
+      }
+      array_multisort($sort, SORT_ASC, SORT_NUMERIC, $this->pointset);
+      
+      $x=$y=array(); 
+      //foreach($this->pointset as $key => $arr)
+      //{
+      //   $sortX[$key] = $arr[0];
+      //}
+      //array_multisort($sortX, SORT_ASC, SORT_NUMERIC, $this->pointset);
          
       foreach ($this->pointset as $key => $arr)
       {
