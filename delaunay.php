@@ -71,12 +71,14 @@ class Circle
 
 class Image
 {
-   var $path, $pObj;
+   var $path, $stageWidth, $stageHeight, $triangle;
    
    function __construct($path,$pObj)
    {
       $this->path=$path;
-      $this->pObj=$pObj;
+      $this->stageWidth=$pObj->stageWidth;
+      $this->stageHeight=$pObj->stageHeight;
+      $this->triangle=$pObj->triangle;
    }
    
    function erropen()
@@ -94,16 +96,16 @@ class Image
    function create()
    {
          // Generate the image variables
-      $im = imagecreate($this->pObj->stageWidth,$this->pObj->stageHeight);
+      $im = imagecreate($this->stageWidth,$this->stageHeight);
       $white = imagecolorallocate ($im,0xff,0xff,0xff);
       $black = imagecolorallocate($im,0x00,0x00,0x00);
       $gray_lite = imagecolorallocate ($im,0xee,0xee,0xee);
       $gray_dark = imagecolorallocate ($im,0x7f,0x7f,0x7f);
      
       // Fill in the background of the image
-      imagefilledrectangle($im, 0, 0, $this->pObj->stageWidth+100, $this->pObj->stageHeight+100, $white);
+      imagefilledrectangle($im, 0, 0, $this->stageWidth+100, $this->stageHeight+100, $white);
             
-      foreach ($this->pObj->triangle as $key => $arr)
+      foreach ($this->triangle as $key => $arr)
       {
          foreach ($arr as $ikey => $iarr)
          {
@@ -136,7 +138,7 @@ class Image
       }
       rewind($handle);	
       $c=0;
-      foreach ($this->pObj->delaunay as $key => $arr)
+      foreach ($this->triangle as $key => $arr)
       {
          foreach ($arr as $ikey => $iarr)
          {
@@ -157,7 +159,7 @@ class Image
       }
       rewind($handle);	
       $c=0;
-      foreach ($this->pObj->points as $key => $arr)
+      foreach ($this->points as $key => $arr)
       {
          if ( !fwrite ($handle, $arr[0].",".$arr[1]."\n" ) )
          {
@@ -483,7 +485,7 @@ class DelaunayTriangulation
       $order= ($powx<$powy) ? $powy : $powx;
  
       foreach($this->points as $key => $arr) {
-	 $sort[$key] = $hilbert->point_to_hilbert($arr->x, $arr->y, $order);
+	 $sort[$key] = $hilbert->point2hilbert($arr->x, $arr->y, $order);
       }
       array_multisort($sort, SORT_ASC, SORT_NUMERIC, $this->points);
       

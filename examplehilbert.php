@@ -13,7 +13,7 @@ foreach (range(31,0,-1) as $x)
 {
     foreach (range(31,0,-1) as $y)
     {
-	$sort[] = $points["$x, $y"] = $hilbert->point_to_moore($x, $y, 4);
+	$sort[] = $points["$x, $y"] = $hilbert->point2moore($x, $y, 4);
     }
 }
 array_multisort($points, $sort);
@@ -26,7 +26,7 @@ foreach (range(7,0,-1) as $x)
 {
     foreach (range(7,0,-1) as $y)
     {
-	$sort[] = $points["$x, $y"] = $hilbert->point_to_hilbert($x, $y, 3);
+	$sort[] = $points["$x, $y"] = $hilbert->point2hilbert($x, $y, 3);
     }
 }
 array_multisort($points, $sort);

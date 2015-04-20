@@ -15,10 +15,10 @@ require_once("delaunay.php");
 $triangle=new DelaunayTriangulation();
 $triangle->main();
 
-//$vis=new visualize("c:\Temp\\",$triangle);
+//$i=new Image("c:\Temp\\",$triangle);
 $i=new Image("/tmp/",$triangle);
 $i->create();
-      
+
 //example2
 $set=array(172,31,238,106,233,397,118,206,58,28,268,382,10,380,342,26,67,371,380,14,382,200,24,200,194,190,10,88,276,19);
 $triangle->main($set);
