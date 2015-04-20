@@ -1,22 +1,65 @@
 <?php
-
-/* * *************************************************************
- * Copyright notice
- *
- * (c) 2013-2015 Chi Hoang (info@chihoang.de)
- *  All rights reserved
- *
- * **************************************************************/
+/*****************************************************************
+ * Delaunay triangulation
+ * 
+ * Copyright (c) 2013-2015 Chi Hoang (info@chihoang.de)
+ * All rights reserved
+ ****************************************************************/
 require_once("hilbert.php");
 
 define("EPSILON",0.000001);
 define("SUPER_TRIANGLE",(float)1000000000);
 
-  // circum circle
+class Triangle {
+   var $x,$y,$z;
+   function __construct($x1,$y1,$x2,$y2,$x3,$y3,$x4,$y4,$x5,$y5,$x6,$y6) {
+      $this->x=new Point(new Edge($x1,$y1),new Edge($x2,$y2));
+      $this->y=new Point(new Edge($x3,$y3),new Edge($x4,$y4));
+      $this->z=new Point(new Edge($x5,$y5),new Edge($x6,$y6));
+   }
+}
+
+class Indices {
+   var $x,$y,$z;
+   function __construct($x,$y,$z) {
+      $this->x=$x;
+      $this->y=$y;
+      $this->z=$z;
+   }
+}
+
+class Edge
+{
+   var $e;
+   function __construct($x,$y) {
+      $this->e=new Point($x,$y);
+   }
+   
+   public function __get($field) {
+      if($field == 'x')
+      {
+	return $this->e->x;
+      } else if($field == 'y')
+      {
+	 return $this->e->y;
+      }
+   }
+}
+
+class Point
+{
+   var $x,$y;
+   function __construct($x,$y) {
+      $this->x=$x;
+      $this->y=$y;
+   }
+}
+
+  // circumcircle
 class Circle
 {
    var $x, $y, $r, $r2, $colinear;
-   function Circle($x, $y, $r, $r2, $colinear)
+   function __construct($x, $y, $r, $r2, $colinear)
    {
       $this->x = $x;
       $this->y = $y;
@@ -26,12 +69,11 @@ class Circle
    }
 }
 
-class visualize
+class Image
 {
-   var $path;
-   var $pObj;
+   var $path, $pObj;
    
-   function visualize($path,$pObj)
+   function __construct($path,$pObj)
    {
       $this->path=$path;
       $this->pObj=$pObj;
@@ -49,7 +91,7 @@ class visualize
       exit;
    }
    
-   function genimage()
+   function create()
    {
          // Generate the image variables
       $im = imagecreate($this->pObj->stageWidth,$this->pObj->stageHeight);
@@ -61,11 +103,11 @@ class visualize
       // Fill in the background of the image
       imagefilledrectangle($im, 0, 0, $this->pObj->stageWidth+100, $this->pObj->stageHeight+100, $white);
             
-      foreach ($this->pObj->delaunay as $key => $arr)
+      foreach ($this->pObj->triangle as $key => $arr)
       {
          foreach ($arr as $ikey => $iarr)
          {
-            list($x1,$y1,$x2,$y2) = $iarr;
+            list($x1,$y1,$x2,$y2) = array($iarr->x->x,$iarr->x->y,$iarr->y->x,$iarr->y->y);
             imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$gray_dark);
 	 }
       }
@@ -86,7 +128,7 @@ class visualize
       fclose($fp);
    }
    
-   function tri()
+   function import()
    {
       if (!$handle = fopen($this->path."tri.csv", "w"))
       {
@@ -107,15 +149,15 @@ class visualize
       fclose($handle);   
    }
    
-   function pset($path)
+   function export($path)
    {
-      if (!$handle = fopen($this->path."pset.csv", "w"))
+      if (!$handle = fopen($this->path."points.csv", "w"))
       {
          $this->erropen();  
       }
       rewind($handle);	
       $c=0;
-      foreach ($this->pObj->pointset as $key => $arr)
+      foreach ($this->pObj->points as $key => $arr)
       {
          if ( !fwrite ($handle, $arr[0].",".$arr[1]."\n" ) )
          {
@@ -130,8 +172,8 @@ class DelaunayTriangulation
 {
    var $stageWidth = 400;
    var $stageHeight = 400;
-   var $delaunay = array();
-   var $pointset = array();
+   var $triangle = array();
+   var $points = array();
    var $indices = array();
    
    function GetCircumCenter($Ax, $Ay, $Bx, $By, $Cx, $Cy)
@@ -180,7 +222,7 @@ class DelaunayTriangulation
       return array(round($CircumCenterX), round($CircumCenterY));
    }
 
-    function dotproduct($x1,$y1,$x2,$y2,$px,$py)
+   function dotproduct($x1,$y1,$x2,$y2,$px,$py)
    {
       $dx1 = $x2 - $x1;
       $dy1 = $y2 - $y1;
@@ -256,13 +298,13 @@ class DelaunayTriangulation
       $r = sqrt($rsqr);
      
       /* Check for coincident points */
-      if($absy1y2 < EPSILON && $absy2y3 < EPSILON)
-      {
-         $colinear=false; 
-      } else
-      {
-         $colinear=true;
-      }
+      //if($absy1y2 < EPSILON && $absy2y3 < EPSILON)
+      //{
+      //   $colinear=false; 
+      //} else
+      //{
+      //   $colinear=true;
+      //}
       return new Circle($xc, $yc, $r, $rsqr, $colinear);
    }
 
@@ -278,7 +320,7 @@ class DelaunayTriangulation
       return $inside;
    }
    
-   function getEdges($n, $x, $y, $z)
+   function getEdges($n, $points)
    {
       /*
          Set up the supertriangle
@@ -288,16 +330,13 @@ class DelaunayTriangulation
          the triangle list.
       */
       
-      $x[$n+0] = -SUPER_TRIANGLE;
-      $y[$n+0] = SUPER_TRIANGLE;
-      $x[$n+1] = 0;
-      $y[$n+1] = -SUPER_TRIANGLE;
-      $x[$n+2] = SUPER_TRIANGLE;
-      $y[$n+2] = SUPER_TRIANGLE;
+      $points[$n+0] = new Point(-SUPER_TRIANGLE,SUPER_TRIANGLE);
+      $points[$n+1] = new Point(0,-SUPER_TRIANGLE);
+      $points[$n+2] = new Point(SUPER_TRIANGLE,SUPER_TRIANGLE);
     
       // indices       
       $v = array(); 
-      $v[] = array($n,$n+1,$n+2);
+      $v[] = new Indices($n,$n+1,$n+2);
       
       //sort buffer
       $complete = array();
@@ -306,7 +345,7 @@ class DelaunayTriangulation
       /*
          Include each point one at a time into the existing mesh
       */
-      foreach ($x as $key => $arr)
+      foreach ($points as $key => $arr)
       {        
          /*
             Set up the edge buffer.
@@ -319,14 +358,16 @@ class DelaunayTriangulation
          foreach ($v as $vkey => $varr)
          {  
             if ($complete[$vkey]) continue;
-            list($vi,$vj,$vk)=array($v[$vkey][0],$v[$vkey][1],$v[$vkey][2]);
-            $c=$this->CircumCircle($x[$vi],$y[$vi],$x[$vj],$y[$vj],$x[$vk],$y[$vk]);
-	    if ($c->x + $c->r < $x[$key]) $complete[$vkey]=1;
-            if ($c->r > EPSILON && $this->inside($c, $x[$key],$y[$key]))
+            list($vi,$vj,$vk)=array($v[$vkey]->x,$v[$vkey]->y,$v[$vkey]->z);
+            $c=$this->CircumCircle($points[$vi]->x,$points[$vi]->y,
+				   $points[$vj]->x,$points[$vj]->y,
+				   $points[$vk]->x,$points[$vk]->y);
+	    if ($c->x + $c->r < $points[$key]->x) $complete[$vkey]=1;
+            if ($c->r > EPSILON && $this->inside($c, $points[$key]->x,$points[$key]->y))
             {
-	       $edges[]=array($vi,$vj);
-	       $edges[]=array($vj,$vk);
-	       $edges[]=array($vk,$vi); 
+	       $edges[]=new Edge($vi,$vj);
+	       $edges[]=new Edge($vj,$vk);
+	       $edges[]=new Edge($vk,$vi); 
 
                unset($v[$vkey]);
                unset($complete[$vkey]);
@@ -345,16 +386,17 @@ class DelaunayTriangulation
             {
                if ($ekey != $ikey)
                {
-                  if (($earr[0] == $iarr[1]) && ($earr[1] == $iarr[0]))
+                  if (($earr->x == $iarr->y) && ($earr->y == $iarr->x))
                   {
                      unset($edges[$ekey]);
                      unset($edges[$ikey]);
                      
-                  } elseif (($earr[0] == $iarr[0]) && ($earr[1] == $iarr[1]))
+                  } else if (($earr->x == $iarr->x) && ($earr->y == $iarr->y))
                   {
                      unset($edges[$ekey]);
                      unset($edges[$ikey]);
-                  }   
+                 
+		  }
                }
             }
          }
@@ -369,18 +411,13 @@ class DelaunayTriangulation
          $ntri=count($v);
          $edges=array_values($edges);
          foreach ($edges as $ekey => $earr)
-         {   
-            $v[] = array($edges[$ekey][0],$edges[$ekey][1],$key);
+         {
+	    if ($edges[$ekey]->x != $key && $edges[$ekey]->y != $key)
+	    {
+	       $v[] = new Indices($edges[$ekey]->x,$edges[$ekey]->y,$key);
+	    }
             $complete[$ntri++]=0;
          }
-	 
-//	 $sort=array();
-//	 foreach ($v as $vkey=>$varr) 
-//	 {
-//            list($vi,$vj,$vk)=array($v[$vkey][0],$v[$vkey][1],$v[$vkey][2]);
-//            $sort[]=$this->dotproduct($x[$vi],$y[$vi],$x[$vj],$y[$vj],$x[$vk],$y[$vk],$pObj->stageWidth/2,$pObj->stageHeight/2);
-//	 }
-//	 array_multisort($sort, SORT_ASC, SORT_NUMERIC, $v);        
       }
     
       /*
@@ -389,87 +426,68 @@ class DelaunayTriangulation
       */
       foreach ($v as $key => $arr)
       {  
-         if ($v[$key][0] >= $n || $v[$key][1] >= $n || $v[$key][2] >= $n)
+         if ($v[$key]->x >= $n || $v[$key]->y >= $n || $v[$key]->z >= $n)
          {
             unset($v[$key]);        
          }
       }
       $v=array_values($v);   
       
-      
       foreach ($v as $key => $arr)
       {
          $this->indices[]=$arr;
-         $this->delaunay[]=array(array($x[$arr[0]],$y[$arr[0]],$x[$arr[1]],$y[$arr[1]]),
-                                 array($x[$arr[1]],$y[$arr[1]],$x[$arr[2]],$y[$arr[2]]),
-                                 array($x[$arr[2]],$y[$arr[2]],$x[$arr[0]],$y[$arr[0]])                                 
+         $this->triangle[]=new Triangle($points[$arr->x]->x,$points[$arr->x]->y,
+				        $points[$arr->y]->x,$points[$arr->y]->y,
+				        $points[$arr->y]->x,$points[$arr->y]->y,
+				        $points[$arr->z]->x,$points[$arr->z]->y,
+				        $points[$arr->z]->x,$points[$arr->z]->y,
+				        $points[$arr->x]->x,$points[$arr->x]->y                                 
                                  );   
       }
       return $v;
    }
  
-   function power($number,$base) {
-      //use when the power is needed
-      $pow=0;
-      do {
-	 $number=ceil($number/$base);
-	 $pow++;
-      } while ($number>1);
-      
-      if ($number==1)
-	 return $pow;
-      else
-	 return false;
-   }
-      
-   function main($pointset=0,$stageWidth=400,$stageHeight=400)
+   function main($points=0,$stageWidth=400,$stageHeight=400)
    {
       $this->stageWidth = $stageWidth;
       $this->stageHeight = $stageHeight;
-      $this->delaunay = array();
-      $this->pointset = array();
+      $this->triangle= array();
+      $this->points = array();
       $this->indices = array();
       
-      if ($pointset==0)
+      if ($points==0)
       {         
          for ($i=0; $i<15; $i++) 
          {
             list($x,$y)=array((float)rand(1,$this->stageWidth),(float)rand(1,$this->stageHeight));
-            $this->pointset[]=array($x,$y);
+            $this->points[]=new Point($x,$y);
          }
       } else
-      { 
-         $this->pointset=$pointset;   
+      {
+	 for ($i=0,$end=count($points);$i<$end;$i+=2)
+	 {
+	    $this->points[]=new Point($points[$i],$points[$i+1]);
+	 }
       }
 
       $maxx=$maxy=0;
-      foreach ($this->pointset as $key => $arr) {
-	 if ($maxx<$arr[0]) $maxx=$arr[0];
-	 if ($maxy<$arr[1]) $maxy=$arr[1];
+      foreach ($this->points as $key => $arr)
+      {
+	 if ($maxx<$arr->x) $maxx=$arr->y;
+	 if ($maxy<$arr->y) $maxy=$arr->y;
       }
-         
-      $powx=$this->power($maxx,2);     
-      $powy=$this->power($maxy,2);
+      
+      $hilbert = new hilbert();     
+      $powx=$hilbert->power($maxx,2);     
+      $powy=$hilbert->power($maxy,2);
       $order= ($powx<$powy) ? $powy : $powx;
  
-      $hilbert = new hilbert();
-      foreach($this->pointset as $key => $arr) {
-	 $sort[$key] = $hilbert->point_to_hilbert($arr[0], $arr[1], $order);
+      foreach($this->points as $key => $arr) {
+	 $sort[$key] = $hilbert->point_to_hilbert($arr->x, $arr->y, $order);
       }
-      array_multisort($sort, SORT_ASC, SORT_NUMERIC, $this->pointset);
+      array_multisort($sort, SORT_ASC, SORT_NUMERIC, $this->points);
       
-      $x=$y=array(); 
-      //foreach($this->pointset as $key => $arr)
-      //{
-      //   $sortX[$key] = $arr[0];
-      //}
-      //array_multisort($sortX, SORT_ASC, SORT_NUMERIC, $this->pointset);
-         
-      foreach ($this->pointset as $key => $arr)
-      {
-        list($x[],$y[]) = $arr;
-      }
-      $result=$this->getEdges(count($this->pointset), $x, $y, $z);
+      $result=$this->getEdges(count($this->points), $this->points);
       return $result;    
    }
 }

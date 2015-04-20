@@ -1,9 +1,10 @@
 <?php
 /***************************************************************
-*   hilbert curve
-*   Version 0.3
-*   Copyright (c) 2010-2015 Chi Hoang 
-*
+*  hilbert curve
+*  Version 0.3
+*  
+*  Copyright (c) 2010-2015 Chi Hoang 
+*  All rights reserved
 ***************************************************************/
 /*************************
 *  hilbert_map_1  =  N
@@ -158,7 +159,24 @@ class hilbert {
 							), 
 				);
 			
-	
+	function power($number,$base)
+	{
+		//use when the power is needed
+		$pow=0;
+		do {
+		  $number=ceil($number/$base);
+		  $pow++;
+		} while ($number>1);
+      
+		if ($number==1)
+		{
+			return $pow;
+		} else
+		{
+			return false;
+		}
+	}
+   
 	function point_to_quadkey($x, $y, $order=16, $map="hilbert_map_1", $mode="hilbert")
 	{		
 		switch ($mode)
@@ -207,7 +225,7 @@ class hilbert {
 		$current_square = "a";
 		$amount = 1 << $order - 1;
 		$x = $y = 0;
-		for ( $i = 2*$order;  $i > 0; $i -= 2 ) {
+		for ($i=2*$order;  $i>0; $i -= 2) {
 			list ( $position, $current_square ) = $this->rev_map [ $current_square ] [ $hilbert >> $i - 2 ];
 			switch ( $position ) {
 				case 1:  $x+=$amount;
@@ -281,7 +299,7 @@ class hilbert {
 		{
 			case "quadtree":
 			{
-				echo "\n$pos:$x:$y:$order:$map:$curve_length\n";
+				//echo "\n$pos:$x:$y:$order:$map:$curve_length\n";
 				$payload = array ($pos - $this->point_to_hilbert($px, $py, $order, $map)-$curve_length, $map);
 				break;
 			}
@@ -293,37 +311,5 @@ class hilbert {
 		}
 		return $payload;
 	}
-	
-	function test_ptm()
-	{
-		foreach (range(31,0,-1) as $x)
-		{
-			foreach (range(31,0,-1) as $y)
-			{
-				$sort[] = $points["$x, $y"] = $this->point_to_moore($x, $y, 4);
-			}
-		}
-		array_multisort($points, $sort);
-		foreach ($points as $k => $v)
-		{
-			echo $k."\n";
-		}
-	}
-	
-	function test_pth() {
-		foreach (range(7,0,-1) as $x)
-		{
-			foreach (range(7,0,-1) as $y)
-			{
-				$sort[] = $points["$x, $y"] = $this->point_to_hilbert($x, $y, 3);
-			}
-		}
-		array_multisort($points, $sort);
-		foreach ($points as $k => $v)
-		{
-			echo $k."\n";
-		}
-	}
-	
 }
 ?>

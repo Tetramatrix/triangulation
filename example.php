@@ -1,5 +1,4 @@
 <?php
-
 /***************************************************************
 * Copyright notice
 *
@@ -17,28 +16,17 @@ $triangle=new DelaunayTriangulation();
 $triangle->main();
 
 //$vis=new visualize("c:\Temp\\",$triangle);
-$vis=new visualize("/tmp/",$triangle);
-$vis->genimage();
+$i=new Image("/tmp/",$triangle);
+$i->create();
       
 //example2
-$set=array();
-$tree=array(172,31,238,106,233,397,118,206,58,28,268,382,10,380,342,26,67,371,380,14,382,200,24,200,194,190,10,88,276,19);
-for ($i=0,$end=count($tree);$i<$end;$i+=2)
-{
-    $set[]=array($tree[$i],$tree[$i+1]);    
-}
+$set=array(172,31,238,106,233,397,118,206,58,28,268,382,10,380,342,26,67,371,380,14,382,200,24,200,194,190,10,88,276,19);
 $triangle->main($set);
- 
-$vis=new visualize("/tmp/",$triangle);
-$vis->genimage(); 
+$i=new Image("/tmp/",$triangle);
+$i->create(); 
 
 //example3
-$set=array();
-$tree=array(172,31,238,106,233,397,118,206,58,28,268,382,10,380,342,26,67,371,380,14,382,200,24,200,194,190,10,88,276,19);
-for ($i=0,$end=count($tree);$i<$end;$i+=2)
-{
-    $set[]=array($tree[$i],$tree[$i+1]);    
-}
+$set=array(172,31,238,106,233,397,118,206,58,28,268,382,10,380,342,26,67,371,380,14,382,200,24,200,194,190,10,88,276,19);
 $triangle->main($set);
-print_r($triangle->delaunay); 
+print_r($triangle->triangle); 
 ?>
