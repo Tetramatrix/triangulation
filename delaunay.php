@@ -2,7 +2,7 @@
 /*****************************************************************
  * Delaunay triangulation
  * 
- * Copyright (c) 2013-2015 Chi Hoang (info@chihoang.de)
+ * Copyright (c) 2013-2017 Chi Hoang
  * All rights reserved
  ****************************************************************/
 require_once("hilbert.php");
@@ -364,7 +364,7 @@ class DelaunayTriangulation
             $c=$this->CircumCircle($points[$vi]->x,$points[$vi]->y,
 				   $points[$vj]->x,$points[$vj]->y,
 				   $points[$vk]->x,$points[$vk]->y);
-	    if ($c->x + $c->r < $points[$key]->x) $complete[$vkey]=1;
+			//if ($c->x + $c->r < $points[$key]->x) $complete[$vkey]=1;
             if ($c->r > EPSILON && $this->inside($c, $points[$key]->x,$points[$key]->y))
             {
 	       $edges[]=new Edge($vi,$vj);
@@ -485,7 +485,7 @@ class DelaunayTriangulation
       $order= ($powx<$powy) ? $powy : $powx;
  
       foreach($this->points as $key => $arr) {
-	 $sort[$key] = $hilbert->point2hilbert($arr->x, $arr->y, $order);
+		$sort[$key] = $hilbert->point2hilbert($arr->x, $arr->y, $order);
       }
       array_multisort($sort, SORT_ASC, SORT_NUMERIC, $this->points);
       
